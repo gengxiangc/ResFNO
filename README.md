@@ -9,5 +9,5 @@ THERMOCHEMICAL CURING MODELLING OF COMPOSITES**.  Please contact cgx@nuaa.edu.cn
 
 **2**.Run `Step2_plot_T_fields.py` to get figure of predicted temperature field. 
 
-![Fig_-_David.png](ResultDisplay/Fig-David.svg)
+![Fig-2d_T_Test_ID_1.svg](Fig/Fig-2d_T_Test_ID_1.svg)
 

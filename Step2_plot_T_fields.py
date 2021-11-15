@@ -22,7 +22,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 # From 0 ~150
 
-index = 1
+index = 23
 
 data  = sio.loadmat('data/Case1.mat') 
 dataT = data['dataT']
