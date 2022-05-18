@@ -33,11 +33,11 @@ def ResFNO(dataT, dataA, dataTair,task='T', x_index=0, ntrain=50):
     
     ############# load data ####################################
     nx = dataA.shape[1]
-    x_data = torch.from_numpy(dataTair.astype(np.float32)).cuda()
+    x_data = torch.from_numpy(dataTair.astype(np.float32)).to(device) 
     if task=='A': # A  Degree of cure
-        y_data = torch.from_numpy(dataA[:,x_index,:].astype(np.float32)).cuda()
+        y_data = torch.from_numpy(dataA[:,x_index,:].astype(np.float32)).to(device) 
     if task=='T': # T Temperature
-        y_data = torch.from_numpy(dataT[:,x_index,:].astype(np.float32)).cuda()
+        y_data = torch.from_numpy(dataT[:,x_index,:].astype(np.float32)).to(device) 
     
     
     # Normalization
@@ -62,7 +62,7 @@ def ResFNO(dataT, dataA, dataTair,task='T', x_index=0, ntrain=50):
     
     # model
     
-    model = FNO1d(modes, width, task).cuda()
+    model = FNO1d(modes, width, task).to(device) 
     
     ################################################################
     # training and evaluation
@@ -79,7 +79,7 @@ def ResFNO(dataT, dataA, dataTair,task='T', x_index=0, ntrain=50):
         t1 = default_timer()
         train_l2 = 0
         for x, y in train_loader:
-            x, y = x.cuda(), y.cuda()
+            x, y = x.to(device) , y.to(device) 
             optimizer.zero_grad()
             out = model(x)
             l2 = myloss(out.view(batch_size, -1), y.view(batch_size, -1))
@@ -107,7 +107,7 @@ def ResFNO(dataT, dataA, dataTair,task='T', x_index=0, ntrain=50):
         ET_max = 0
         with torch.no_grad():
             for x, y in test_loader:
-                x, y = x.cuda(), y.cuda()
+                x, y = x.to(device) , y.to(device) 
                 out = model(x)
                 test_l2 += myloss((out).view(batch_size, -1), (y).view(batch_size, -1)).item()
                 ET_max = torch.max(torch.abs(norm_y.decode(out)[:,:,0] - norm_y.decode(y)))
@@ -152,6 +152,7 @@ def ResFNO(dataT, dataA, dataTair,task='T', x_index=0, ntrain=50):
     loss_dict = {'train_error':train_error,
                  'test_error' :test_error,
                  'deltaT'     :ET_list}
+    
     out_data_dict = {
                 'pre_test' : pre_test.cpu().detach().numpy(),
                 'pre_train': pre_train.cpu().detach().numpy(),
@@ -163,7 +164,28 @@ def ResFNO(dataT, dataA, dataTair,task='T', x_index=0, ntrain=50):
     
     return model_output, loss_dict, out_data_dict
 
+def Predict(model, dataTair, dataT, x_index, T_index):
+        # Normalization
 
+    x_data_ori = torch.from_numpy(dataTair.astype(np.float32)).to(device) 
+    y_data_ori = torch.from_numpy(dataT[:,x_index,:].astype(np.float32)).to(device) 
+    # Normalization
+    norm_x = RangeNormalizer(x_data_ori)
+    x_data = norm_x.encode(x_data_ori)
+    
+    norm_y = RangeNormalizer(y_data_ori)
+    
+    x_input  = x_data[T_index].reshape(1, x_data.shape[1], 1)
+    y_pre = model(x_input)
+    
+    y_pre  = norm_y.decode(y_pre)
+    
+    x_input = x_data_ori[T_index].detach().numpy().reshape(-1)
+    T_Pre   = y_pre.detach().numpy().reshape(-1)
+    T_Real  = y_data_ori[T_index].detach().numpy().reshape(-1)
+    
+    return x_input, T_Pre, T_Real
+    
 ################################################################
 #  1d fourier layer
 ################################################################
