@@ -10,119 +10,76 @@ Implement of
 
 """
 
-import torch 
-import numpy as np
-import scipy.io as sio
-from utilsResFNO import ResFNO, FNO1d, RangeNormalizer,Predict
-import matplotlib.pyplot as plt
+from datetime import datetime
 
-if __name__ == '__main__':
-    
-    '''
-    load data of case1 [1]:
-    dataT: temperature history(K) from FEM, 200*51*223
-    dataA: Cure of degree of composites, 200*51*223
-    
-    200: number of samples
-    51: x=0 ~ x=50mm
-    223: t=0min to t= 222min
-    '''
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    data  = sio.loadmat('data/Case1.mat') 
-    dataA = data['dataA']  # x=0 ~ x=20 is Inval tool, cure of degree = 0
-    dataT = data['dataT'] 
-    dataTair = data['dataTair']
-    
-    seed = 1
-    torch.manual_seed(seed)
-    np.random.seed(seed)
-    
-    SAVE_MODELS = 1 # if save trained model
-    SAVE_LOSS = 1   # is save training loss and test loss
-    task = 'T'      # task: temperature or degree of cure
-    dic = 'logs/' 
-    ntrain = 50     # size of training data
-    TRAIN = 0
+import streamlit as st
+from vega_datasets import data
 
-    ''' 
-    Note:  
-    ResFNO can be generalized to 2D field, more quick, but more complex.
-    Here is the simple iteration of 1d case. 
-    x=0mm to x=51mm, 51 sub-models
-    
-    '''
-    if not TRAIN:
-        T_index = 9
-        x_index = 35
-        model = FNO1d(16, 64, task).to(device) 
-        model.load_state_dict(torch.load(dic+'ResFNO_T_X35_net_params.pkl'))
-        model.eval()
-        x_input, T_Pre, T_Real = Predict(model, dataTair, dataT, x_index, T_index)
+from utils import chart, db
 
-        ERROR = np.max(np.abs(T_Real- T_Pre))
-        nx = dataT.shape[1]
-        nt = dataT.shape[2]
-        tn = 223
-        T_list = np.linspace(0, tn, nt)
-        plt.figure(figsize=(6,4))   
-        plt.text(160, 490, r'${\Delta}T_{max}$ ='+str(np.round(ERROR, 2)) + ' K', 
-                 fontsize=12 ) 
-        plt.plot(T_list, x_input, 'k-', label='T of Air')        
-        plt.plot(T_list, T_Real, 'r-', label='T simulated')
-        plt.plot(T_list, T_Pre, 'b-', label='T ResFNO')
-        plt.title('(b) Temperature history at $x=35mm$', fontsize=12)
-        plt.ylabel('Temperature (K)', fontsize=12)
-        plt.ylim([270, 520])
-        plt.legend(fontsize=12, loc='upper left')
-        # plt.grid()
-        plt.show()
-        
-        
-    if TRAIN: # Training
-    # for i in range(51):
-        for i in [35]:
+COMMENT_TEMPLATE_MD = """{} - {}
+> {}"""
 
-            x_index = i 
-    
-            model_output, loss_dict, out_data_dict  = ResFNO(dataT, dataA, dataTair,
-                                                             task    = task, 
-                                                             x_index = x_index, 
-                                                             ntrain  = ntrain)
-            
-            Title = str(task)+ '_X' + str(x_index)  
 
-            if SAVE_MODELS:
-                torch.save(model_output, dic+'ResFNO_' + str(Title) + '_net_params.pkl')
-            
-            if SAVE_LOSS:
-                sio.savemat(dic+'ResFNO_' + str(Title) + '_loss_' + str(ntrain) + '.mat', mdict=loss_dict)  
-                                                                 
-            sio.savemat(dic+'ResFNO_' + str(Title) + '_pre_' + str(ntrain) + '.mat', mdict=out_data_dict)
+def space(num_lines=1):
+    """Adds empty lines to the Streamlit app."""
+    for _ in range(num_lines):
+        st.write("")
 
-            
-            
-    
-    
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+st.set_page_config(layout="centered", page_icon="💬", page_title="Commenting app")
+
+# Data visualisation part
+
+st.title("💬 Commenting app")
+
+source = data.stocks()
+all_symbols = source.symbol.unique()
+symbols = st.multiselect("Choose stocks to visualize", all_symbols, all_symbols[:3])
+
+space(1)
+
+source = source[source.symbol.isin(symbols)]
+chart = chart.get_chart(source)
+st.altair_chart(chart, use_container_width=True)
+
+space(2)
+
+# Comments part
+
+conn = db.connect()
+comments = db.collect(conn)
+
+with st.expander("💬 Open comments"):
+
+    # Show comments
+
+    st.write("**Comments:**")
+
+    for index, entry in enumerate(comments.itertuples()):
+        st.markdown(COMMENT_TEMPLATE_MD.format(entry.name, entry.date, entry.comment))
+
+        is_last = index == len(comments) - 1
+        is_new = "just_posted" in st.session_state and is_last
+        if is_new:
+            st.success("☝️ Your comment was successfully posted.")
+
+    space(2)
+
+    # Insert comment
+
+    st.write("**Add your own comment:**")
+    form = st.form("comment")
+    name = form.text_input("Name")
+    comment = form.text_area("Comment")
+    submit = form.form_submit_button("Add comment")
+
+    if submit:
+        date = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        db.insert(conn, [[name, comment, date]])
+        if "just_posted" not in st.session_state:
+            st.session_state["just_posted"] = True
+        st.experimental_rerun()
     
     
     
