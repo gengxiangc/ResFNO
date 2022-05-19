@@ -164,27 +164,29 @@ def ResFNO(dataT, dataA, dataTair,task='T', x_index=0, ntrain=50):
     
     return model_output, loss_dict, out_data_dict
 
-def Predict(model, dataTair, dataT, x_index, T_index):
+def Predict(model, dataTair, dataT, x_index, T_index, Ta):
         # Normalization
-
+    Ta = np.array(Ta)
+    
     x_data_ori = torch.from_numpy(dataTair.astype(np.float32)).to(device) 
     y_data_ori = torch.from_numpy(dataT[:,x_index,:].astype(np.float32)).to(device) 
     # Normalization
     norm_x = RangeNormalizer(x_data_ori)
     x_data = norm_x.encode(x_data_ori)
+    x_input = norm_x.encode(
+        torch.from_numpy(Ta.reshape(1,x_data.shape[1]).astype(np.float32))
+        )
     
     norm_y = RangeNormalizer(y_data_ori)
     
-    x_input  = x_data[T_index].reshape(1, x_data.shape[1], 1)
-    y_pre = model(x_input)
+    y_pre = model(x_input.reshape(1,x_data.shape[1],1))
     
     y_pre  = norm_y.decode(y_pre)
-    
-    x_input = x_data_ori[T_index].detach().numpy().reshape(-1)
+
     T_Pre   = y_pre.detach().numpy().reshape(-1)
     T_Real  = y_data_ori[T_index].detach().numpy().reshape(-1)
     
-    return x_input, T_Pre, T_Real
+    return Ta, T_Pre, T_Real
     
 ################################################################
 #  1d fourier layer
@@ -342,7 +344,22 @@ class RangeNormalizer(object):
         x = (x - self.b)/self.a
         x = x.view(s)
         return x
+    
+def T_random(t, dt1, dt2, dt3, dt4, dt5, h0, dh1, dh2):
 
+    if t <= dt1:
+        return h0 + t*dh1/dt1
+    if t > dt1 and t <= dt1 + dt2:
+        return h0 + dh1
+    if t > dt1 + dt2 and t<= dt1 + dt2 + dt3:
+        return h0 + dh1 + (t - dt1 -dt2)*dh2/dt3
+    if t > dt1 + dt2 + dt3 and t<= dt1 + dt2 + dt3 + dt4:
+        return h0 + dh1 + dh2
+    if t > dt1 + dt2 + dt3 + dt4 and t<= dt1 + dt2 + dt3 + dt4 + dt5:
+        return h0 + dh1 + dh2 - (t - dt1 -dt2 - dt3 - dt4)*(dh1+dh2)/dt5
+    if t> dt1 + dt2 + dt3 + dt4 + dt5:
+        return h0
+    
 #loss function with rel Lp loss
 class LpLoss(object):
     def __init__(self, d=2, p=2, size_average=True, reduction=True):

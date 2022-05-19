@@ -1,22 +1,22 @@
 import altair as alt
 
-
 def get_chart(data):
     hover = alt.selection_single(
-        fields=["date"],
+        fields=["Time"],
         nearest=True,
         on="mouseover",
         empty="none",
     )
 
     lines = (
-        alt.Chart(data, title="Evolution of stock prices")
+        alt.Chart(data, title="Cure cycle")
         .mark_line()
         .encode(
-            x="date",
-            y="price",
-            color="symbol",
-            strokeDash="symbol",
+            x="Time",
+            y= alt.Y("Temperature", scale=alt.Scale(domain=[270, 520])),
+            color=alt.Color("method", scale=alt.
+                    Scale(domain=['T Air' ,'T Real','T Pre'], range=['black', 'red', 'blue']))
+            # strokeDash="method",
         )
     )
 
@@ -28,12 +28,12 @@ def get_chart(data):
         alt.Chart(data)
         .mark_rule()
         .encode(
-            x="date",
-            y="price",
+            x="Time",
+            y="Temperature",
             opacity=alt.condition(hover, alt.value(0.3), alt.value(0)),
             tooltip=[
-                alt.Tooltip("date", title="Date"),
-                alt.Tooltip("price", title="Price (USD)"),
+                alt.Tooltip("Time", title="Time (min)"),
+                alt.Tooltip("Temperature", title="Temperature (k)"),
             ],
         )
         .add_selection(hover)
