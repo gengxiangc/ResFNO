@@ -15,7 +15,7 @@ def get_chart(data):
             x="Time",
             y= alt.Y("Temperature", scale=alt.Scale(domain=[270, 520])),
             color=alt.Color("method", scale=alt.
-                    Scale(domain=['T Air' ,'T Real','T Pre'], range=['black', 'red', 'blue']))
+                    Scale(domain=['T Air' ,'T Pre'], range=['black', 'blue']))
             # strokeDash="method",
         )
     )
