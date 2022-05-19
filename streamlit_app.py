@@ -10,17 +10,13 @@ Implement of
 
 """
 
-from datetime import datetime
 import scipy.io as sio
 import streamlit as st
-from vega_datasets import data
 import pandas as pd
 import torch 
 import numpy as np
-import scipy.io as sio
 from utilsResFNO import ResFNO, FNO1d, RangeNormalizer,Predict,T_random
-import matplotlib.pyplot as plt
-from utils import chart, db
+from utils import chart
 import numpy as np
 import random
 
@@ -110,7 +106,7 @@ T_index = 10
 # st.write("ResFNO predicting  ...")
 T_input, T_Pre, _ = Predict(model, dataTair, dataT, x_index, T_index, Ta)
 T2 = time.time()
-# st.write('ResFNO finished in %.2f second' % ((T2 - T1)))
+st.write('ResFNO finished in %.4f second' % ((T2 - T1)))
 
 FEM = 0
 

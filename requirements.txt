@@ -2,6 +2,7 @@ torch
 numpy
 scipy
 vega_datasets
+matplotlib
 altair
 pandas
 google-api-python-client
