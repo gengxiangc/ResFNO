@@ -159,7 +159,7 @@ if not FEM:
 
 # source = source[source.symbol.isin(symbols)]
 
-chart = chart.get_chart_local(cure_cycle)
+chart = chart.get_chart(cure_cycle)
 st.altair_chart(chart, use_container_width=True)
 
 space(2)
