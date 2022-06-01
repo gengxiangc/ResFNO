@@ -28,7 +28,7 @@ if __name__ == '__main__':
     223: t=0min to t= 222min
     '''
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    data  = sio.loadmat('data/Case1.mat') 
+    data  = sio.loadmat('data/Designed_2hold_200.mat') 
     dataA = data['dataA']  # x=0 ~ x=20 is Inval tool, cure of degree = 0
     dataT = data['dataT'] 
     dataTair = data['dataTair']
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     task = 'T'      # task: temperature or degree of cure
     dic = 'logs/' 
     ntrain = 50     # size of training data
-    TRAIN = 0
+    TRAIN = 1
 
     ''' 
     Note:  

@@ -15,13 +15,13 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 T1 = time.time()
 
 # Print model
-def Comsol_FEM(T_list, Ta):
+def Comsol_FEM(T_list, Ta, client):
+
+    model = client.load('mph/8502.mph')
     cure_cycle  = np.vstack((T_list,  Ta)).T
     np.savetxt('mph/cure_cycle.csv', cure_cycle, delimiter=',')
     if 1:
-        client = mph.start(cores=1)
-        print( '--- Loading Model ---')
-        model = client.load('mph/8502.mph')
+
         T2 = time.time()
     
         model.build()
@@ -29,8 +29,12 @@ def Comsol_FEM(T_list, Ta):
     
         print( '--- Solving Model ---')
         model.solve('研究 1')
-        model.clear()
+        # model.clear()
         T3 = time.time()
+        
+        client.remove(model)
+        client.clear()
+        
     
         print('加载时间:%.2f秒' % ((T2 - T1)))
         print('仿真时间:%.2f秒' % ((T3 - T2)))
